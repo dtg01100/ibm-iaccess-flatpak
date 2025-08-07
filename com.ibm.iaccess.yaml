@@ -4,6 +4,16 @@ sdk: org.freedesktop.Sdk//23.08
 extensions:
   - org.freedesktop.Sdk.Extension.openjdk
 modules:
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/bin
+      - cp -r openjdk.tar.gz/* /app/bin/
+    sources:
+      - type: archive
+        url: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.16%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.16_8.tar.gz
+        sha256: 166774efcf0f722f2ee18eba0039de2d685b350ee14d7b69e6f83437dafd2af1
+        dest: openjdk.tar.gz
   - name: ibm-iaccess
     buildsystem: simple
     build-commands:
@@ -12,8 +22,8 @@ modules:
       - chmod -R u+rwX,go+rX .
       - mkdir -p /app/IBMiAccess_v1r1
       - cp -r * /app/IBMiAccess_v1r1/
-      - install -D ibm-iaccess.desktop /app/share/applications/ibm-iaccess.desktop
-      - install -D /app/IBMiAccess_v1r1/Icons/logo128.png /app/share/icons/hicolor/128x128/apps/ibm-iaccess.png
+      - install -D ibm-iaccess.desktop /app/share/applications/com.ibm.iaccess.desktop
+      - install -D /app/IBMiAccess_v1r1/Icons/logo128.png /app/share/icons/hicolor/128x128/apps/com.ibm.iaccess.png
     sources:
       - type: dir
         path: IBMiAccess_v1r1

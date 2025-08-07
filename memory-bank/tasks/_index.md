@@ -3,7 +3,7 @@
 
 
 ## In Progress
-
+ - [TASK001] Flatpak build, install, and test - Monitoring build and troubleshooting OpenJDK extraction
 
 ## Pending
 - [TASK003] System Font Integration for Flatpak - Pending

@@ -44,7 +44,9 @@ fi
 
 echo "[Fontconfig Sync] Font settings sync complete. Limitations may apply due to Flatpak sandboxing." >&2
 
-JAVA_BIN=/usr/lib/sdk/openjdk/bin/java
-exec "$JAVA_BIN" -jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"
-JAVA_BIN=/usr/lib/sdk/openjdk/bin/java
+JAVA_BIN="/app/bin/bin/java"
+if [ ! -x "$JAVA_BIN" ]; then
+  echo "[ERROR] Bundled OpenJDK binary not found at $JAVA_BIN. Please check the Flatpak build." >&2
+  exit 1
+fi
 exec "$JAVA_BIN" -jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"

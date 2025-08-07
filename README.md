@@ -36,12 +36,10 @@ This project packages the IBM i Access client as a Flatpak for Linux desktop env
    ./build-flatpak.sh
    ```
    - This will build the Flatpak repo and generate `ibm-iaccess.flatpak` including all files from `IBMiAccess_v1r1/`.
-4. Install the bundle:
+4. Install the bundle and launch the application manually:
+   > **Note:** Do not use automated install or launch scripts. You must run these commands yourself:
    ```bash
-   flatpak install ibm-iaccess.flatpak
-   ```
-5. Run the application:
-   ```bash
+   flatpak install --user ibm-iaccess.flatpak
    flatpak run com.ibm.iaccess
    ```
 
@@ -60,6 +58,7 @@ flatpak-builder --run build-dir com.ibm.iaccess.yaml /app/launch-ibmiaccess.sh
 
 ## Limitations & Known Issues
 
+- **User Install Only**: Flatpak installation must use the `--user` flag. System-wide install is not supported and will fail with remote configuration errors.
 - **Font Settings**: Fontconfig settings are synced at startup, but Flatpak sandboxing may prevent full system font integration. Some font rendering issues may persist.
 - **Proprietary Files**: IBM binaries and resources are **not** included and must be supplied by the user.
 - **No Official Support**: This package is not supported by IBM. Use at your own risk.
