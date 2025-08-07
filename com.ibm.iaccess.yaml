@@ -1,30 +1,44 @@
 app-id: com.ibm.iaccess
 runtime: org.freedesktop.Platform//23.08
 sdk: org.freedesktop.Sdk//23.08
+extensions:
+  - org.freedesktop.Sdk.Extension.openjdk
 modules:
   - name: ibm-iaccess
     buildsystem: simple
     build-commands:
-      - install -D IBMiAccess_v1r1/acsbundle.jar /app/acsbundle.jar
-      - install -d /app/Documentation
-      - cp -r IBMiAccess_v1r1/Documentation/* /app/Documentation/
-      - install -d /app/Fonts
-      - cp -r IBMiAccess_v1r1/Fonts/* /app/Fonts/
-      - install -d /app/Icons
-      - cp -r IBMiAccess_v1r1/Icons/* /app/Icons/
-      - install -d /app/Linux_Application
-      - cp -r IBMiAccess_v1r1/Linux_Application/* /app/Linux_Application/
-      # Add other required resources as needed
+      - ls -l
+      - install -D launch-ibmiaccess.sh /app/launch-ibmiaccess.sh
+      - chmod -R u+rwX,go+rX .
+      - mkdir -p /app/IBMiAccess_v1r1
+      - cp -r * /app/IBMiAccess_v1r1/
+      - install -D ibm-iaccess.desktop /app/share/applications/ibm-iaccess.desktop
+      - install -D /app/IBMiAccess_v1r1/Icons/logo128.png /app/share/icons/hicolor/128x128/apps/ibm-iaccess.png
+    sources:
+      - type: dir
+        path: IBMiAccess_v1r1
+      - type: file
+        path: launch-ibmiaccess.sh
+      - type: file
+        path: ibm-iaccess.desktop
+      - type: file
+        path: IBMiAccess_v1r1/Icons/logo128.png
 finish-args:
   # Allow network access for remote connections
   - --share=network
   # Allow access to user's home directory (can be restricted further)
   - --filesystem=home
+  # Allow access to host fonts for fontconfig
+  - --filesystem=host:ro
+  - --filesystem=/usr/share/fonts:ro
   # Enable X11 and Wayland for GUI
   - --socket=x11
   - --socket=wayland
+  # Add OpenJDK extension for Java runtime
+  - --extension=org.freedesktop.Sdk.Extension.openjdk=system
   # Add other permissions as needed
-command: "java"
-args:
-  - "-jar"
-  - "/app/acsbundle.jar"
+  # Allow desktop notifications
+  - --talk-name=org.freedesktop.Notifications
+  # Enable desktop export
+  - --metadata=X-Flatpak-Export-Desktop=true
+command: "/app/launch-ibmiaccess.sh"
