@@ -1,3 +1,5 @@
+# Flatpak build artifacts
+.flatpak-builder/
 # Exclude all proprietary IBM i Access files and directories
 IBMiAccess_v1r1/
 !IBMiAccess_v1r1/.gitkeep
