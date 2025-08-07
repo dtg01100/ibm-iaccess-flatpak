@@ -1,0 +1,30 @@
+app-id: com.ibm.iaccess
+runtime: org.freedesktop.Platform//23.08
+sdk: org.freedesktop.Sdk//23.08
+modules:
+  - name: ibm-iaccess
+    buildsystem: simple
+    build-commands:
+      - install -D IBMiAccess_v1r1/acsbundle.jar /app/acsbundle.jar
+      - install -d /app/Documentation
+      - cp -r IBMiAccess_v1r1/Documentation/* /app/Documentation/
+      - install -d /app/Fonts
+      - cp -r IBMiAccess_v1r1/Fonts/* /app/Fonts/
+      - install -d /app/Icons
+      - cp -r IBMiAccess_v1r1/Icons/* /app/Icons/
+      - install -d /app/Linux_Application
+      - cp -r IBMiAccess_v1r1/Linux_Application/* /app/Linux_Application/
+      # Add other required resources as needed
+finish-args:
+  # Allow network access for remote connections
+  - --share=network
+  # Allow access to user's home directory (can be restricted further)
+  - --filesystem=home
+  # Enable X11 and Wayland for GUI
+  - --socket=x11
+  - --socket=wayland
+  # Add other permissions as needed
+command: "java"
+args:
+  - "-jar"
+  - "/app/acsbundle.jar"

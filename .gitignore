@@ -1,0 +1,32 @@
+# Exclude all proprietary IBM i Access files and directories
+IBMiAccess_v1r1/
+!IBMiAccess_v1r1/.gitkeep
+
+# Exclude build output
+build-dir/
+
+# Exclude Flatpak build artifacts
+*.flatpak
+*.flatpakref
+
+# Exclude OS and editor files
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+
+# Exclude other binaries
+*.jar
+*.exe
+*.dll
+*.so
+*.bin
+
+# Exclude secrets
+*.key
+*.pem
+*.crt
+
+# Exclude logs
+*.log
