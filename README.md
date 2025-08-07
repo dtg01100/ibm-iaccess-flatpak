@@ -19,9 +19,11 @@ This project packages the IBM i Access client as a Flatpak for Linux desktop env
 - Excludes all proprietary IBM files from version control
 - Memory Bank documentation for project history and tasks
 
-## Installation
+## Installation & Automated Bundle Creation
 
-> **Note:** You must provide your own licensed IBM i Access files. This package does **not** include any proprietary IBM binaries or resources.
+> **Note:** You must provide your own licensed IBM i Access files. This package does **not** include any proprietary IBM binaries or resources in the repository, but the final Flatpak bundle will include all files you place in `IBMiAccess_v1r1/`.
+
+### Quick Start (Automated Build)
 
 1. Clone this repository:
    ```bash
@@ -29,14 +31,32 @@ This project packages the IBM i Access client as a Flatpak for Linux desktop env
    cd ibm-iaccess-flatpak
    ```
 2. Place your IBM i Access files in the `IBMiAccess_v1r1/` directory as described in the documentation.
-3. Build the Flatpak package:
+3. Run the automated build script:
    ```bash
-   flatpak-builder --force-clean build-dir com.ibm.iaccess.yaml
+   ./build-flatpak.sh
    ```
-4. Run the application:
+   - This will build the Flatpak repo and generate `ibm-iaccess.flatpak` including all files from `IBMiAccess_v1r1/`.
+4. Install the bundle:
    ```bash
-   flatpak-builder --run build-dir com.ibm.iaccess.yaml /app/launch-ibmiaccess.sh
+   flatpak install ibm-iaccess.flatpak
    ```
+5. Run the application:
+   ```bash
+   flatpak run com.ibm.iaccess
+   ```
+
+### Manual Build (Advanced)
+
+If you prefer manual steps:
+```bash
+flatpak-builder --force-clean build-dir com.ibm.iaccess.yaml
+flatpak-builder --run build-dir com.ibm.iaccess.yaml /app/launch-ibmiaccess.sh
+```
+
+### Licensing & Distribution
+
+- The final Flatpak bundle (`ibm-iaccess.flatpak`) will include all files from `IBMiAccess_v1r1/`, including proprietary IBM binaries you supply.
+- You are responsible for complying with IBM's licensing terms when distributing or installing the bundle.
 
 ## Limitations & Known Issues
 
