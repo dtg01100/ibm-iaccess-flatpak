@@ -6,7 +6,7 @@
 
 
 ## Pending
-
+- [TASK003] System Font Integration for Flatpak - Pending
 
 ## Completed
 - [TASK001] Package IBM i Access as a Flatpak - Completed on 2025-08-07

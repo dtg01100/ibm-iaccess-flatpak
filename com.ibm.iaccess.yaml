@@ -31,6 +31,8 @@ finish-args:
   # Allow access to host fonts for fontconfig
   - --filesystem=host:ro
   - --filesystem=/usr/share/fonts:ro
+  # Allow access to host fontconfig settings
+  - --filesystem=xdg-config/fontconfig:ro
   # Enable X11 and Wayland for GUI
   - --socket=x11
   - --socket=wayland
