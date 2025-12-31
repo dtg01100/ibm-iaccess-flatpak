@@ -17,11 +17,25 @@ This project packages the IBM i Access client as a Flatpak for Linux desktop env
 - Desktop launcher and icon
 - Automated fontconfig workaround for better font rendering
 - Excludes all proprietary IBM files from version control
-- Memory Bank documentation for project history and tasks
+
+## Versioning & releases
+
+- **Semantic tags for the wrapper**: `vMAJOR.MINOR.PATCH` (starting at **v1.0.0** for this package). Tags are managed via `git tag`.
+- **ACS payload tracking**: The IBM ACS version you supply is noted in release notes (tested with **ACS 1.1.9.3**).
+- **Bundle name**: `ibm-iaccess.flatpak` (contains the files you place in `IBMiAccess_v1r1/`).
+- See `RELEASE_NOTES.md` for per-tag details and checksums.
 
 ## Installation & Automated Bundle Creation
 
 > **Note:** You must provide your own licensed IBM i Access files. This package does **not** include any proprietary IBM binaries or resources in the repository, but the final Flatpak bundle will include all files you place in `IBMiAccess_v1r1/`.
+
+### Prerequisites
+
+- **Flatpak**: Ensure Flatpak is installed on your system.
+- **OpenJDK Extension**: This Flatpak requires the OpenJDK extension. It should be installed automatically during the build/install process, but if you encounter issues, ensure `org.freedesktop.Sdk.Extension.openjdk` version `24.08` is installed:
+  ```bash
+  flatpak install --user flathub org.freedesktop.Sdk.Extension.openjdk//24.08
+  ```
 
 ### Quick Start (Automated Build)
 
@@ -31,24 +45,37 @@ This project packages the IBM i Access client as a Flatpak for Linux desktop env
    cd ibm-iaccess-flatpak
    ```
 2. Place your IBM i Access files in the `IBMiAccess_v1r1/` directory as described in the documentation.
+   - Tested payload: ACS 1.1.9.3 (you must supply your licensed files).
 3. Run the automated build script:
    ```bash
    ./build-flatpak.sh
    ```
-   - This will build the Flatpak repo and generate `ibm-iaccess.flatpak` including all files from `IBMiAccess_v1r1/`.
-4. Install the bundle and launch the application manually:
-   > **Note:** Do not use automated install or launch scripts. You must run these commands yourself:
+   - This builds and installs the Flatpak locally for the current user.
+   - To also create a distributable bundle (`ibm-iaccess.flatpak`), add the `--bundle` flag:
+     ```bash
+     ./build-flatpak.sh --bundle
+     ```
+4. Launch the application:
    ```bash
-   flatpak install --user ibm-iaccess.flatpak
    flatpak run com.ibm.iaccess
    ```
 
 ### Manual Build (Advanced)
 
-If you prefer manual steps:
+If you prefer manual steps or need to create a bundle separately:
 ```bash
+# Build and install locally
 flatpak-builder --force-clean build-dir com.ibm.iaccess.yaml
 flatpak-builder --run build-dir com.ibm.iaccess.yaml /app/launch-ibmiaccess.sh
+
+# After local build, create a distributable bundle
+flatpak build-bundle --runtime-repo=repo repo ibm-iaccess.flatpak com.ibm.iaccess
+```
+
+Then install and run the bundle:
+```bash
+flatpak install --user ibm-iaccess.flatpak
+flatpak run com.ibm.iaccess
 ```
 
 ### Licensing & Distribution
@@ -81,7 +108,7 @@ Please use the GitHub Issues page to report packaging bugs, documentation errors
 
 ## Memory Bank
 
-This project uses a Markdown-based Memory Bank for tracking tasks, decisions, and project history. See the `memory-bank/` directory for details.
+Not used. Release notes and tagging are tracked in `RELEASE_NOTES.md`.
 
 ## License
 

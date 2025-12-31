@@ -1,52 +1,84 @@
-
 #!/bin/sh
-#!/bin/sh
-# Robust fontconfig sync for Flatpak IBM i Access
-FLATPAK_FONTCONFIG="$HOME/.var/app/com.ibm.iaccess/config/fontconfig"
-USER_FONTCONFIG="$HOME/.config/fontconfig"
-SYSTEM_FONTCONFIG_ETC="/etc/fonts"
-SYSTEM_FONTCONFIG_SHARE="/usr/share/fontconfig"
+# Set environment variables for better font rendering
+# Rely on Flatpak to mount host fonts at /run/host/fonts or /run/host/usr/share/fonts
+export FONTCONFIG_PATH="/etc/fonts"
+export GDK_BACKEND=x11
 
-echo "[Fontconfig Sync] Starting font settings sync..." >&2
-mkdir -p "$FLATPAK_FONTCONFIG"
-
-# Copy user fontconfig
-if [ -d "$USER_FONTCONFIG" ]; then
-  echo "[Fontconfig Sync] Copying user fontconfig from $USER_FONTCONFIG to $FLATPAK_FONTCONFIG" >&2
-  cp -r "$USER_FONTCONFIG"/* "$FLATPAK_FONTCONFIG/" 2>/dev/null || echo "[Fontconfig Sync] Warning: Failed to copy user fontconfig" >&2
+# Use Java from the OpenJDK extension
+if [ -f "/usr/lib/sdk/openjdk/bin/java" ]; then
+    export JAVA_HOME="/usr/lib/sdk/openjdk"
+    JAVA_BIN="/usr/lib/sdk/openjdk/bin/java"
+elif [ -f "/app/jre/bin/java" ]; then
+    JAVA_BIN="/app/jre/bin/java"
 else
-  echo "[Fontconfig Sync] No user fontconfig found at $USER_FONTCONFIG" >&2
+    JAVA_BIN="java"
 fi
 
-# Copy system-wide fontconfig (etc)
-if [ -d "$SYSTEM_FONTCONFIG_ETC" ] && [ -r "$SYSTEM_FONTCONFIG_ETC" ]; then
-  echo "[Fontconfig Sync] Copying system fontconfig from $SYSTEM_FONTCONFIG_ETC to $FLATPAK_FONTCONFIG" >&2
-  cp -rn "$SYSTEM_FONTCONFIG_ETC"/* "$FLATPAK_FONTCONFIG/" 2>/dev/null || echo "[Fontconfig Sync] Warning: Failed to copy system fontconfig (etc)" >&2
-else
-  echo "[Fontconfig Sync] No system fontconfig found at $SYSTEM_FONTCONFIG_ETC" >&2
+# Ensure X11 display is available
+if [ -z "$DISPLAY" ]; then
+    export DISPLAY=:0
 fi
 
-# Copy system-wide fontconfig (share)
-if [ -d "$SYSTEM_FONTCONFIG_SHARE" ] && [ -r "$SYSTEM_FONTCONFIG_SHARE" ]; then
-  echo "[Fontconfig Sync] Copying system fontconfig from $SYSTEM_FONTCONFIG_SHARE to $FLATPAK_FONTCONFIG" >&2
-  cp -rn "$SYSTEM_FONTCONFIG_SHARE"/* "$FLATPAK_FONTCONFIG/" 2>/dev/null || echo "[Fontconfig Sync] Warning: Failed to copy system fontconfig (share)" >&2
-else
-  echo "[Fontconfig Sync] No system fontconfig found at $SYSTEM_FONTCONFIG_SHARE" >&2
-fi
+# Force X11 by unsetting Wayland
+export WAYLAND_DISPLAY=""
+export GDK_BACKEND=x11
 
-# Copy host fonts if exposed by Flatpak
-if [ -d "/run/host/fonts" ]; then
-  echo "[Fontconfig Sync] Copying host fonts from /run/host/fonts to $FLATPAK_FONTCONFIG" >&2
-  cp -rn /run/host/fonts/* "$FLATPAK_FONTCONFIG/" 2>/dev/null || echo "[Fontconfig Sync] Warning: Failed to copy host fonts" >&2
-else
-  echo "[Fontconfig Sync] No host fonts found at /run/host/fonts" >&2
-fi
+# Generate a custom fonts.conf to include bundled fonts and host fonts
+# Use XDG_CACHE_HOME if set, otherwise default to ~/.cache
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+export FONTCONFIG_FILE="$CACHE_DIR/fontconfig/fonts.conf"
+mkdir -p "$(dirname "$FONTCONFIG_FILE")"
 
-echo "[Fontconfig Sync] Font settings sync complete. Limitations may apply due to Flatpak sandboxing." >&2
+cat > "$FONTCONFIG_FILE" << 'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <!-- Load default system configuration to ensure we have standard fonts and settings -->
+  <include>/etc/fonts/fonts.conf</include>
 
-JAVA_BIN="/app/bin/bin/java"
-if [ ! -x "$JAVA_BIN" ]; then
-  echo "[ERROR] Bundled OpenJDK binary not found at $JAVA_BIN. Please check the Flatpak build." >&2
-  exit 1
-fi
-exec "$JAVA_BIN" -jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"
+  <!-- Add our bundled fonts -->
+  <dir>/app/IBMiAccess_v1r1/Fonts</dir>
+  
+  <!-- Add user and host fonts just in case default config misses them in this sandbox -->
+  <dir>/run/host/user-fonts</dir>
+  <dir prefix="xdg">fonts</dir>
+  
+  <!-- Force antialiasing and hinting -->
+  <match target="font">
+    <edit name="antialias" mode="assign">
+      <bool>true</bool>
+    </edit>
+    <edit name="hinting" mode="assign">
+      <bool>true</bool>
+    </edit>
+    <edit name="hintstyle" mode="assign">
+      <const>hintslight</const>
+    </edit>
+    <edit name="rgba" mode="assign">
+      <const>rgb</const>
+    </edit>
+    <edit name="lcdfilter" mode="assign">
+      <const>lcddefault</const>
+    </edit>
+  </match>
+  
+  <cachedir prefix="xdg">fontconfig</cachedir>
+</fontconfig>
+EOF
+
+# Configure shared temporary directory for printer output/uploads
+# ACS writes temp files here before asking xdg-open to handle them.
+# We use a path in XDG_CACHE_HOME so it's accessible by the host.
+APP_TEMP_DIR="$CACHE_DIR/tmp"
+mkdir -p "$APP_TEMP_DIR"
+
+# Start the application
+# We rely on _JAVA_OPTIONS set in the manifest or environment for font smoothing settings.
+# Default fallback if not set: LCD smoothing and metal look and feel.
+exec "$JAVA_BIN" \
+    -Djava.awt.headless=false \
+    -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel \
+    -Djava.awt.x11.display="$DISPLAY" \
+    -Djdk.gtk.version=2 \
+    -Djava.io.tmpdir="$APP_TEMP_DIR" \
+    -jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"

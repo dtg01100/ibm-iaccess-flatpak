@@ -4,6 +4,12 @@
 IBMiAccess_v1r1/
 !IBMiAccess_v1r1/.gitkeep
 
+# Exclude temporary files
+*.tmp
+*.temp
+*~
+repo/
+
 # Exclude build output
 build-dir/
 

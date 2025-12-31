@@ -1,6 +1,8 @@
 #!/bin/bash
-# Automated Flatpak bundle builder for IBM i Access (Third-Party)
-# This script builds the Flatpak repo and generates the .flatpak bundle, including proprietary IBM files from IBMiAccess_v1r1/
+# Automated Flatpak builder for IBM i Access (Third-Party)
+# This script builds the Flatpak and installs it locally. Optionally creates a distributable .flatpak bundle.
+# Usage: ./build-flatpak.sh [--bundle]
+#   --bundle  Also create ibm-iaccess.flatpak bundle for distribution
 
 set -e
 
@@ -11,7 +13,16 @@ MANIFEST="com.ibm.iaccess.yaml"
 BUILD_DIR="build-dir"
 IBM_DIR="IBMiAccess_v1r1"
 OPENJDK_EXT="org.freedesktop.Sdk.Extension.openjdk"
-RUNTIME_VER="23.08"
+RUNTIME_VER="24.08"
+CREATE_BUNDLE=false
+
+# Parse arguments
+for arg in "$@"; do
+  case "$arg" in
+    --bundle) CREATE_BUNDLE=true ;;
+    *) echo "Unknown option: $arg"; exit 1 ;;
+  esac
+done
 
 # Check for required IBM files
 if [ ! -d "$IBM_DIR" ] || [ -z "$(ls -A $IBM_DIR)" ]; then
@@ -30,16 +41,20 @@ fi
 # Clean previous build output
 rm -rf "$BUILD_DIR" "$REPO" "$BUNDLE"
 
-# Build Flatpak repo
-flatpak-builder --force-clean --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
+# Build and install Flatpak directly
+echo "[INFO] Building and installing Flatpak..."
+echo "[INFO] Note: Release version is managed via git tags (currently targeting v1.0.0)"
+flatpak-builder --force-clean --user --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
 
-# Generate Flatpak bundle
-flatpak build-bundle "$REPO" "$BUNDLE" "$APP_ID"
+echo "[SUCCESS] Flatpak built and installed successfully."
 
-if [ -f "$BUNDLE" ]; then
-  echo "[SUCCESS] Flatpak bundle created: $BUNDLE"
-  echo "To install: flatpak install $BUNDLE"
+# Optionally create distributable bundle
+if [ "$CREATE_BUNDLE" = true ]; then
+  echo "[INFO] Creating distributable bundle: $BUNDLE"
+  flatpak build-bundle --runtime-repo="$REPO" "$REPO" "$BUNDLE" "$APP_ID"
+  echo "[SUCCESS] Bundle created: $BUNDLE"
+  echo "[INFO] Checksum:"
+  sha256sum "$BUNDLE"
 else
-  echo "[ERROR] Bundle creation failed." >&2
-  exit 2
+  echo "[INFO] Flatpak app is installed for user. To create a distributable bundle, run: ./build-flatpak.sh --bundle"
 fi

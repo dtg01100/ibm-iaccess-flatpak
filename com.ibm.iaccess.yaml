@@ -1,29 +1,26 @@
 app-id: com.ibm.iaccess
-runtime: org.freedesktop.Platform//23.08
-sdk: org.freedesktop.Sdk//23.08
-extensions:
+runtime: org.freedesktop.Platform//24.08
+sdk: org.freedesktop.Sdk//24.08
+sdk-extensions:
   - org.freedesktop.Sdk.Extension.openjdk
 modules:
   - name: openjdk
     buildsystem: simple
     build-commands:
-      - mkdir -p /app/bin
-      - cp -r openjdk.tar.gz/* /app/bin/
-    sources:
-      - type: archive
-        url: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.16%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.16_8.tar.gz
-        sha256: 166774efcf0f722f2ee18eba0039de2d685b350ee14d7b69e6f83437dafd2af1
-        dest: openjdk.tar.gz
+      - /usr/lib/sdk/openjdk/install.sh
   - name: ibm-iaccess
     buildsystem: simple
     build-commands:
-      - ls -l
+      - chmod -R u+rw,go+r . || true
       - install -D launch-ibmiaccess.sh /app/launch-ibmiaccess.sh
-      - chmod -R u+rwX,go+rX .
       - mkdir -p /app/IBMiAccess_v1r1
       - cp -r * /app/IBMiAccess_v1r1/
       - install -D ibm-iaccess.desktop /app/share/applications/com.ibm.iaccess.desktop
       - install -D /app/IBMiAccess_v1r1/Icons/logo128.png /app/share/icons/hicolor/128x128/apps/com.ibm.iaccess.png
+      # Force external browser/file opener to use xdg-open (system default via portal)
+      - echo "com.ibm.iaccess.browser=/usr/bin/xdg-open" >> /app/IBMiAccess_v1r1/AcsConfig.properties
+      - echo "com.ibm.iaccess.fileopen=/usr/bin/xdg-open" >> /app/IBMiAccess_v1r1/AcsConfig.properties
+      - echo "com.ibm.iaccess.javaAwtDesktopAllowed=false" >> /app/IBMiAccess_v1r1/AcsConfig.properties
     sources:
       - type: dir
         path: IBMiAccess_v1r1
@@ -31,26 +28,32 @@ modules:
         path: launch-ibmiaccess.sh
       - type: file
         path: ibm-iaccess.desktop
-      - type: file
-        path: IBMiAccess_v1r1/Icons/logo128.png
 finish-args:
-  # Allow network access for remote connections
+  # Set Java options for font rendering (lcd provides better subpixel smoothing)
+  - --env=_JAVA_OPTIONS=-Dawt.useSystemAAFontSettings=lcd -Dswing.aatext=true
+  # Allow network access
   - --share=network
-  # Allow access to user's home directory (can be restricted further)
-  - --filesystem=home
-  # Allow access to host fonts for fontconfig
-  - --filesystem=host:ro
-  - --filesystem=/usr/share/fonts:ro
-  # Allow access to host fontconfig settings
+  # Allow access to host filesystem for opening files
+  - --filesystem=host
+  # Allow access to host fontconfig settings (avoid mounting /usr as it is reserved)
   - --filesystem=xdg-config/fontconfig:ro
-  # Enable X11 and Wayland for GUI
+  # Enable X11 only (force fallback to avoid AWT Wayland issues)
   - --socket=x11
-  - --socket=wayland
-  # Add OpenJDK extension for Java runtime
-  - --extension=org.freedesktop.Sdk.Extension.openjdk=system
-  # Add other permissions as needed
-  # Allow desktop notifications
+  - --nosocket=wayland
+  - --socket=fallback-x11
+  # IPC/Bus
+  - --socket=session-bus
+  - --socket=system-bus
+  - --share=ipc
+  - --device=dri
+  # Environment
+  - --env=DISPLAY=
+  - --env=WAYLAND_DISPLAY=
+  - --env=JAVA_TOOLKIT=awt
+  # Desktop integration
   - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.portal.*
+  - --system-talk-name=org.freedesktop.login1
   # Enable desktop export
   - --metadata=X-Flatpak-Export-Desktop=true
 command: "/app/launch-ibmiaccess.sh"
