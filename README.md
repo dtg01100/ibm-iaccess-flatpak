@@ -109,10 +109,6 @@ Contributions are welcome for packaging improvements, documentation, and usabili
 
 Please use the GitHub Issues page to report packaging bugs, documentation errors, or feature requests. Do **not** report IBM product bugs here.
 
-## Memory Bank
-
-Not used. Release notes and tagging are tracked in `RELEASE_NOTES.md`.
-
 ## License
 
 This repository is provided under the MIT License for packaging scripts and documentation. IBM i Access files are **not** included and are subject to IBM's licensing terms.
