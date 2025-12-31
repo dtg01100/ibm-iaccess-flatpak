@@ -1,8 +1,9 @@
 #!/bin/bash
 # Automated Flatpak builder for IBM i Access (Third-Party)
 # This script builds the Flatpak and installs it locally. Optionally creates a distributable .flatpak bundle.
-# Usage: ./build-flatpak.sh [--bundle]
+# Usage: ./build-flatpak.sh [--bundle] [--system]
 #   --bundle  Also create ibm-iaccess.flatpak bundle for distribution
+#   --system  Install system-wide (requires sudo/root; default is --user)
 
 set -e
 
@@ -15,11 +16,13 @@ IBM_DIR="IBMiAccess_v1r1"
 OPENJDK_EXT="org.freedesktop.Sdk.Extension.openjdk"
 RUNTIME_VER="24.08"
 CREATE_BUNDLE=false
+INSTALL_SCOPE="--user"
 
 # Parse arguments
 for arg in "$@"; do
   case "$arg" in
     --bundle) CREATE_BUNDLE=true ;;
+    --system) INSTALL_SCOPE="--system" ;;
     *) echo "Unknown option: $arg"; exit 1 ;;
   esac
 done
@@ -42,11 +45,11 @@ fi
 rm -rf "$BUILD_DIR" "$REPO" "$BUNDLE"
 
 # Build and install Flatpak directly
-echo "[INFO] Building and installing Flatpak..."
+echo "[INFO] Building and installing Flatpak ($INSTALL_SCOPE)..."
 echo "[INFO] Note: Release version is managed via git tags (currently targeting v1.0.0)"
-flatpak-builder --force-clean --user --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
+flatpak-builder --force-clean $INSTALL_SCOPE --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
 
-echo "[SUCCESS] Flatpak built and installed successfully."
+echo "[SUCCESS] Flatpak built and installed successfully ($INSTALL_SCOPE)."
 
 # Optionally create distributable bundle
 if [ "$CREATE_BUNDLE" = true ]; then
@@ -56,5 +59,5 @@ if [ "$CREATE_BUNDLE" = true ]; then
   echo "[INFO] Checksum:"
   sha256sum "$BUNDLE"
 else
-  echo "[INFO] Flatpak app is installed for user. To create a distributable bundle, run: ./build-flatpak.sh --bundle"
+  echo "[INFO] Flatpak app is installed. To create a distributable bundle, run: ./build-flatpak.sh --bundle"
 fi
