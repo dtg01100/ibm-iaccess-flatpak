@@ -1,84 +1,57 @@
 #!/bin/sh
-# Set environment variables for better font rendering
-# Rely on Flatpak to mount host fonts at /run/host/fonts or /run/host/usr/share/fonts
-export FONTCONFIG_PATH="/etc/fonts"
-export GDK_BACKEND=x11
+# Configure shared temporary directory for printer output/uploads
+# ACS writes temp files here before asking xdg-open to handle them.
+# We use a path in XDG_CACHE_HOME so it's accessible by the host.
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+APP_TEMP_DIR="$CACHE_DIR/tmp"
+mkdir -p "$APP_TEMP_DIR"
 
 # Use Java from the OpenJDK extension
 if [ -f "/usr/lib/sdk/openjdk/bin/java" ]; then
-    export JAVA_HOME="/usr/lib/sdk/openjdk"
-    JAVA_BIN="/usr/lib/sdk/openjdk/bin/java"
+	export JAVA_HOME="/usr/lib/sdk/openjdk"
+	JAVA_BIN="/usr/lib/sdk/openjdk/bin/java"
 elif [ -f "/app/jre/bin/java" ]; then
-    JAVA_BIN="/app/jre/bin/java"
+	JAVA_BIN="/app/jre/bin/java"
 else
-    JAVA_BIN="java"
+	JAVA_BIN="java"
 fi
 
 # Ensure X11 display is available
 if [ -z "$DISPLAY" ]; then
-    export DISPLAY=:0
+	export DISPLAY=:0
 fi
 
-# Force X11 by unsetting Wayland
-export WAYLAND_DISPLAY=""
-export GDK_BACKEND=x11
+# Set GTK theme to match KDE (Breeze or Breeze-Dark)
+# Check if user prefers dark theme
+if [ -f "$HOME/.config/gtk-3.0/settings.ini" ] && grep -q "gtk-application-prefer-dark-theme=true" "$HOME/.config/gtk-3.0/settings.ini" 2>/dev/null; then
+	GTK_THEME="Breeze-Dark"
+else
+	GTK_THEME="Breeze"
+fi
 
-# Generate a custom fonts.conf to include bundled fonts and host fonts
-# Use XDG_CACHE_HOME if set, otherwise default to ~/.cache
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
-export FONTCONFIG_FILE="$CACHE_DIR/fontconfig/fonts.conf"
-mkdir -p "$(dirname "$FONTCONFIG_FILE")"
+export GTK_THEME="$GTK_THEME"
 
-cat > "$FONTCONFIG_FILE" << 'EOF'
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-  <!-- Load default system configuration to ensure we have standard fonts and settings -->
-  <include>/etc/fonts/fonts.conf</include>
+# Trick Java into thinking it's on GNOME for better GTK integration
+# Many Java apps check XDG_CURRENT_DESKTOP to decide look-and-feel
+export XDG_CURRENT_DESKTOP=GNOME
+export DESKTOP_SESSION=gnome
 
-  <!-- Add our bundled fonts -->
-  <dir>/app/IBMiAccess_v1r1/Fonts</dir>
-  
-  <!-- Add user and host fonts just in case default config misses them in this sandbox -->
-  <dir>/run/host/user-fonts</dir>
-  <dir prefix="xdg">fonts</dir>
-  
-  <!-- Force antialiasing and hinting -->
-  <match target="font">
-    <edit name="antialias" mode="assign">
-      <bool>true</bool>
-    </edit>
-    <edit name="hinting" mode="assign">
-      <bool>true</bool>
-    </edit>
-    <edit name="hintstyle" mode="assign">
-      <const>hintslight</const>
-    </edit>
-    <edit name="rgba" mode="assign">
-      <const>rgb</const>
-    </edit>
-    <edit name="lcdfilter" mode="assign">
-      <const>lcddefault</const>
-    </edit>
-  </match>
-  
-  <cachedir prefix="xdg">fontconfig</cachedir>
-</fontconfig>
-EOF
+# Debug: show environment
+echo "=== IBM i Access Environment ===" >&2
+echo "JAVA_BIN: $JAVA_BIN" >&2
+echo "DISPLAY: $DISPLAY" >&2
+echo "GTK_THEME: $GTK_THEME" >&2
+echo "XDG_CURRENT_DESKTOP: $XDG_CURRENT_DESKTOP" >&2
+echo "=================================" >&2
 
-# Configure shared temporary directory for printer output/uploads
-# ACS writes temp files here before asking xdg-open to handle them.
-# We use a path in XDG_CACHE_HOME so it's accessible by the host.
-APP_TEMP_DIR="$CACHE_DIR/tmp"
-mkdir -p "$APP_TEMP_DIR"
-
-# Start the application
-# We rely on _JAVA_OPTIONS set in the manifest or environment for font smoothing settings.
-# Default fallback if not set: LCD smoothing and metal look and feel.
 exec "$JAVA_BIN" \
-    -Djava.awt.headless=false \
-    -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel \
-    -Djava.awt.x11.display="$DISPLAY" \
-    -Djdk.gtk.version=2 \
-    -Djava.io.tmpdir="$APP_TEMP_DIR" \
-    -jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"
+	-Djava.awt.headless=false \
+	-Djava.awt.x11.display="$DISPLAY" \
+	-Djava.io.tmpdir="$APP_TEMP_DIR" \
+	-Dawt.useSystemAAFontSettings=lcd \
+	-Dswing.aatext=true \
+	-Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel \
+	-Dgtk.theme.name="$GTK_THEME" \
+	-Dgtk.icon.theme.name="$GTK_THEME" \
+	-Djdk.gtk.version=3 \
+	-jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"

@@ -32,8 +32,8 @@ finish-args:
   # Trick Java into using GTK look-and-feel on KDE
   - --env=XDG_CURRENT_DESKTOP=GNOME
   - --env=DESKTOP_SESSION=gnome
-  # Java options for GTK3 look-and-feel and font rendering
-  - --env=_JAVA_OPTIONS=-Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel -Dawt.useSystemAAFontSettings=lcd -Dswing.aatext=true -Djdk.gtk.version=3
+  # Java options for Nimbus with GTK2 backend
+  - --env=_JAVA_OPTIONS=-Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel -Dawt.useSystemAAFontSettings=lcd -Dswing.aatext=true -Djdk.gtk.version=2
   # X11 socket (Flatpak handles DISPLAY/XAUTHORITY automatically)
   - --socket=x11
   - --socket=fallback-x11

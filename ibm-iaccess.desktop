@@ -2,7 +2,7 @@
 [Desktop Entry]
 Name=IBM i Access Client Solutions
 Comment=Access IBM i systems
-Exec=/app/launch-ibmiaccess.sh
+Exec=/app/launch-ibmiaccess.sh %F
 Icon=com.ibm.iaccess
 Terminal=false
 Type=Application
@@ -11,3 +11,4 @@ StartupNotify=true
 StartupWMClass=com-ibm-iaccess-launch-AcsLaunchPad
 X-Flatpak-Runtime=org.freedesktop.Platform//24.08
 X-Flatpak-Name=com.ibm.iaccess
+MimeType=text/plain;application/sql;text/x-sql;

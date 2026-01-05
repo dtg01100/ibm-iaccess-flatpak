@@ -1,9 +1,16 @@
 #!/bin/bash
 # Automated Flatpak builder for IBM i Access (Third-Party)
 # This script builds the Flatpak and installs it locally. Optionally creates a distributable .flatpak bundle.
-# Usage: ./build-flatpak.sh [--bundle] [--system]
-#   --bundle  Also create ibm-iaccess.flatpak bundle for distribution
-#   --system  Install system-wide (requires sudo/root; default is --user)
+# Usage: ./build-flatpak.sh [--bundle] [--system] [--variant=VARIANT]
+#   --bundle    Also create ibm-iaccess.flatpak bundle for distribution
+#   --system    Install system-wide (requires sudo/root; default is --user)
+#   --variant=  Choose look-and-feel variant: gtk2, gtk3, nimbus, hybrid (default: gtk2)
+#
+# Available variants:
+#   gtk2    - Metal/GTK2 look-and-feel (default, conservative)
+#   gtk3    - GTK3 look-and-feel (better KDE integration)
+#   nimbus  - Nimbus look-and-feel (Java cross-platform best)
+#   hybrid  - Nimbus + GTK2 hybrid (font-friendly)
 
 set -e
 
@@ -17,32 +24,63 @@ OPENJDK_EXT="org.freedesktop.Sdk.Extension.openjdk"
 RUNTIME_VER="24.08"
 CREATE_BUNDLE=false
 INSTALL_SCOPE="--user"
+VARIANT="gtk3" # GTK3 is the default for KDE theme integration
 
 # Parse arguments
 for arg in "$@"; do
-  case "$arg" in
-    --bundle) CREATE_BUNDLE=true ;;
-    --system) INSTALL_SCOPE="--system" ;;
-    *) echo "Unknown option: $arg"; exit 1 ;;
-  esac
+	case "$arg" in
+	--bundle) CREATE_BUNDLE=true ;;
+	--system) INSTALL_SCOPE="--system" ;;
+	--variant=*)
+		VARIANT="${arg#*=}"
+		# Validate variant
+		case "$VARIANT" in
+		gtk2 | gtk3 | nimbus | hybrid) ;;
+		*)
+			echo "Unknown variant: $VARIANT. Valid options: gtk2, gtk3, nimbus, hybrid"
+			exit 1
+			;;
+		esac
+		;;
+	*)
+		echo "Unknown option: $arg"
+		exit 1
+		;;
+	esac
 done
+
+# Set manifest based on variant
+MANIFEST="com.ibm.iaccess.${VARIANT}.yaml"
+echo "[INFO] Using variant: $VARIANT ($MANIFEST)"
 
 # Check for required IBM files
 if [ ! -d "$IBM_DIR" ] || [ -z "$(ls -A $IBM_DIR)" ]; then
-  echo "[ERROR] $IBM_DIR/ is missing or empty. Please place your licensed IBM i Access files in this directory before building." >&2
-  exit 1
+	echo "[ERROR] $IBM_DIR/ is missing or empty. Please place your licensed IBM i Access files in this directory before building." >&2
+	exit 1
+fi
+
+# Check manifest exists
+if [ ! -f "$MANIFEST" ]; then
+	echo "[ERROR] Manifest file not found: $MANIFEST" >&2
+	exit 1
 fi
 
 # Check for OpenJDK Flatpak extension
-if ! flatpak info "$OPENJDK_EXT//$RUNTIME_VER" > /dev/null 2>&1; then
-  echo "[INFO] Installing required Flatpak extension: $OPENJDK_EXT//$RUNTIME_VER" >&2
-  flatpak install -y "$OPENJDK_EXT//$RUNTIME_VER"
+if ! flatpak info "$OPENJDK_EXT//$RUNTIME_VER" >/dev/null 2>&1; then
+	echo "[INFO] Installing required Flatpak extension: $OPENJDK_EXT//$RUNTIME_VER" >&2
+	flatpak install -y --user flathub "$OPENJDK_EXT//$RUNTIME_VER"
 else
-  echo "[INFO] Required Flatpak extension $OPENJDK_EXT//$RUNTIME_VER is already installed." >&2
+	echo "[INFO] Required Flatpak extension $OPENJDK_EXT//$RUNTIME_VER is already installed." >&2
 fi
 
 # Clean previous build output
 rm -rf "$BUILD_DIR" "$REPO" "$BUNDLE"
+
+# Uninstall previous version to avoid conflicts
+if flatpak info "$APP_ID" >/dev/null 2>&1; then
+	echo "[INFO] Uninstalling previous version..."
+	flatpak remove "$APP_ID" || true
+fi
 
 # Build and install Flatpak directly
 echo "[INFO] Building and installing Flatpak ($INSTALL_SCOPE)..."
@@ -50,14 +88,15 @@ echo "[INFO] Note: Release version is managed via git tags (currently targeting 
 flatpak-builder --force-clean $INSTALL_SCOPE --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
 
 echo "[SUCCESS] Flatpak built and installed successfully ($INSTALL_SCOPE)."
+echo "[INFO] Built with variant: $VARIANT"
 
 # Optionally create distributable bundle
 if [ "$CREATE_BUNDLE" = true ]; then
-  echo "[INFO] Creating distributable bundle: $BUNDLE"
-  flatpak build-bundle --runtime-repo="$REPO" "$REPO" "$BUNDLE" "$APP_ID"
-  echo "[SUCCESS] Bundle created: $BUNDLE"
-  echo "[INFO] Checksum:"
-  sha256sum "$BUNDLE"
+	echo "[INFO] Creating distributable bundle: $BUNDLE"
+	flatpak build-bundle --runtime-repo="$REPO" "$REPO" "$BUNDLE" "$APP_ID"
+	echo "[SUCCESS] Bundle created: $BUNDLE"
+	echo "[INFO] Checksum:"
+	sha256sum "$BUNDLE"
 else
-  echo "[INFO] Flatpak app is installed. To create a distributable bundle, run: ./build-flatpak.sh --bundle"
+	echo "[INFO] Flatpak app is installed. To create a distributable bundle, run: ./build-flatpak.sh --bundle"
 fi
