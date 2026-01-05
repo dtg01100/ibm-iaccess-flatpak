@@ -9,6 +9,43 @@ Type=Application
 Categories=Network;Utility;
 StartupNotify=true
 StartupWMClass=com-ibm-iaccess-launch-AcsLaunchPad
+Actions=selectsystem;emulator;sessionmgr;sqlscripts;schemas;datatransfer;ifs;printer;certificates;
 X-Flatpak-Runtime=org.freedesktop.Platform//24.08
 X-Flatpak-Name=com.ibm.iaccess
 MimeType=text/plain;application/sql;text/x-sql;
+
+[Desktop Action selectsystem]
+Name=Set Quick Launch System
+Exec=/app/select-default-system.sh
+
+[Desktop Action emulator]
+Name=5250 Emulator
+Exec=/app/launch-with-system-prompt.sh 5250 "5250 Emulator"
+
+[Desktop Action sessionmgr]
+Name=5250 Session Manager
+Exec=/app/launch-ibmiaccess.sh /plugin=sm
+
+[Desktop Action sqlscripts]
+Name=Run SQL Scripts
+Exec=/app/launch-with-system-prompt.sh rss "Run SQL Scripts"
+
+[Desktop Action schemas]
+Name=Schemas
+Exec=/app/launch-with-system-prompt.sh db2 "Schemas"
+
+[Desktop Action datatransfer]
+Name=Data Transfer
+Exec=/app/launch-ibmiaccess.sh /plugin=dtgui
+
+[Desktop Action ifs]
+Name=Integrated File System
+Exec=/app/launch-with-system-prompt.sh ifs "Integrated File System"
+
+[Desktop Action printer]
+Name=Printer Output
+Exec=/app/launch-with-system-prompt.sh splf "Printer Output"
+
+[Desktop Action certificates]
+Name=Certificate Management
+Exec=/app/launch-ibmiaccess.sh /plugin=keyman

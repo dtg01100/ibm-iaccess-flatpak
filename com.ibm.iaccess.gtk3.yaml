@@ -13,6 +13,10 @@ modules:
     build-commands:
       - chmod -R u+rw,go+r . || true
       - install -D launch-ibmiaccess.sh /app/launch-ibmiaccess.sh
+      - install -D launch-with-system-prompt.sh /app/launch-with-system-prompt.sh
+      - chmod +x /app/launch-with-system-prompt.sh
+      - install -D select-default-system.sh /app/select-default-system.sh
+      - chmod +x /app/select-default-system.sh
       - mkdir -p /app/IBMiAccess_v1r1
       - cp -r * /app/IBMiAccess_v1r1/
       - install -D ibm-iaccess.desktop /app/share/applications/com.ibm.iaccess.desktop
@@ -26,6 +30,10 @@ modules:
         path: IBMiAccess_v1r1
       - type: file
         path: launch-ibmiaccess.sh
+      - type: file
+        path: launch-with-system-prompt.sh
+      - type: file
+        path: select-default-system.sh
       - type: file
         path: ibm-iaccess.desktop
 finish-args:
