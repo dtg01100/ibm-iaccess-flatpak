@@ -8,3 +8,6 @@ Terminal=false
 Type=Application
 Categories=Network;Utility;
 StartupNotify=true
+StartupWMClass=com-ibm-iaccess-launch-AcsLaunchPad
+X-Flatpak-Runtime=org.freedesktop.Platform//24.08
+X-Flatpak-Name=com.ibm.iaccess
