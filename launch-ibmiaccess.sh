@@ -21,15 +21,8 @@ if [ -z "$DISPLAY" ]; then
 	export DISPLAY=:0
 fi
 
-# Set GTK theme to match KDE (Breeze or Breeze-Dark)
-# Check if user prefers dark theme
-if [ -f "$HOME/.config/gtk-3.0/settings.ini" ] && grep -q "gtk-application-prefer-dark-theme=true" "$HOME/.config/gtk-3.0/settings.ini" 2>/dev/null; then
-	GTK_THEME="Breeze-Dark"
-else
-	GTK_THEME="Breeze"
-fi
-
-export GTK_THEME="$GTK_THEME"
+# Use GNOME's native theme (Adwaita) - don't force KDE themes
+# GNOME handles GTK theming automatically through its native theme
 
 # Trick Java into thinking it's on GNOME for better GTK integration
 # Many Java apps check XDG_CURRENT_DESKTOP to decide look-and-feel
@@ -51,7 +44,5 @@ exec "$JAVA_BIN" \
 	-Dawt.useSystemAAFontSettings=lcd \
 	-Dswing.aatext=true \
 	-Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel \
-	-Dgtk.theme.name="$GTK_THEME" \
-	-Dgtk.icon.theme.name="$GTK_THEME" \
 	-Djdk.gtk.version=3 \
 	-jar /app/IBMiAccess_v1r1/acsbundle.jar "$@"

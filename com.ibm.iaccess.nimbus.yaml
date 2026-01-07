@@ -29,14 +29,15 @@ modules:
       - type: file
         path: ibm-iaccess.desktop
 finish-args:
-  # Trick Java into using GTK look-and-feel on KDE
+  # Set desktop environment to GNOME for proper Java GTK look-and-feel detection
   - --env=XDG_CURRENT_DESKTOP=GNOME
   - --env=DESKTOP_SESSION=gnome
   # Java options for Nimbus look-and-feel and font rendering
   - --env=_JAVA_OPTIONS=-Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel -Dawt.useSystemAAFontSettings=lcd -Dswing.aatext=true
-  # X11 socket (Flatpak handles DISPLAY/XAUTHORITY automatically)
+  # Allow both X11 and Wayland for better desktop compatibility
   - --socket=x11
   - --socket=fallback-x11
+  - --socket=wayland
   - --share=ipc
   - --share=network
   # Access host filesystems for fonts and config
@@ -46,7 +47,6 @@ finish-args:
   - --socket=session-bus
   - --socket=system-bus
   - --device=dri
-  - --env=WAYLAND_DISPLAY=
   - --env=JAVA_TOOLKIT=awt
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.freedesktop.portal.*
