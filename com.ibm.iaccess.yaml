@@ -13,6 +13,10 @@ modules:
     build-commands:
       - chmod -R u+rw,go+r . || true
       - install -D launch-ibmiaccess.sh /app/launch-ibmiaccess.sh
+      - install -D launch-with-system-prompt.sh /app/launch-with-system-prompt.sh
+      - chmod +x /app/launch-with-system-prompt.sh
+      - install -D select-default-system.sh /app/select-default-system.sh
+      - chmod +x /app/select-default-system.sh
       - mkdir -p /app/IBMiAccess_v1r1
       - cp -r * /app/IBMiAccess_v1r1/
       - install -D ibm-iaccess.desktop /app/share/applications/com.ibm.iaccess.desktop
@@ -27,13 +31,15 @@ modules:
       - type: file
         path: launch-ibmiaccess.sh
       - type: file
+        path: launch-with-system-prompt.sh
+      - type: file
+        path: select-default-system.sh
+      - type: file
         path: ibm-iaccess.desktop
 finish-args:
   # Set desktop environment to GNOME for proper Java GTK look-and-feel detection
   - --env=XDG_CURRENT_DESKTOP=GNOME
   - --env=DESKTOP_SESSION=gnome
-  # Java options for GTK3 look-and-feel and font rendering
-  - --env=_JAVA_OPTIONS=-Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel -Dawt.useSystemAAFontSettings=lcd -Dswing.aatext=true -Djdk.gtk.version=3
   # Allow both X11 and Wayland for better desktop compatibility
   - --socket=x11
   - --socket=fallback-x11
