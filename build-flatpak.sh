@@ -1,9 +1,12 @@
 #!/bin/bash
 # Automated Flatpak builder for IBM i Access (Third-Party)
-# This script builds the Flatpak and installs it locally. Optionally creates a distributable .flatpak bundle.
-# Usage: ./build-flatpak.sh [--bundle] [--system]
-#   --bundle    Also create ibm-iaccess.flatpak bundle for distribution
-#   --system    Install system-wide (requires sudo/root; default is --user)
+# This script builds the Flatpak and optionally creates a distributable .flatpak bundle.
+# Usage: ./build-flatpak.sh [options]
+#   --bundle      Create bundle (requires runtime from Flathub); skips local install
+#   --standalone  Create self-contained bundle; skips local install
+#   --install     Also install locally (use with --bundle/--standalone to override default)
+#   --no-install  Skip local install (default for --bundle/--standalone)
+#   --system      Install system-wide (requires sudo/root; default is --user)
 
 set -e
 
@@ -16,13 +19,28 @@ IBM_DIR="IBMiAccess_v1r1"
 OPENJDK_EXT="org.freedesktop.Sdk.Extension.openjdk"
 RUNTIME_VER="24.08"
 CREATE_BUNDLE=false
+STANDALONE=false
 INSTALL_SCOPE="--user"
+SKIP_INSTALL=false
 
 # Parse arguments
+EXPLICIT_INSTALL_FLAG=false
 for arg in "$@"; do
 	case "$arg" in
 	--bundle) CREATE_BUNDLE=true ;;
+	--standalone)
+		CREATE_BUNDLE=true
+		STANDALONE=true
+		;;
 	--system) INSTALL_SCOPE="--system" ;;
+	--no-install)
+		SKIP_INSTALL=true
+		EXPLICIT_INSTALL_FLAG=true
+		;;
+	--install)
+		SKIP_INSTALL=false
+		EXPLICIT_INSTALL_FLAG=true
+		;;
 	*)
 		echo "Unknown option: $arg"
 		exit 1
@@ -30,18 +48,34 @@ for arg in "$@"; do
 	esac
 done
 
-echo "[INFO] Using manifest: com.ibm.iaccess.yaml"
-
-MANIFEST="com.ibm.iaccess.yaml"
-# Check for required IBM files
-if [ ! -d "$IBM_DIR" ] || [ -z "$(ls -A $IBM_DIR)" ]; then
-	echo "[ERROR] $IBM_DIR/ is missing or empty. Please place your licensed IBM i Access files in this directory before building." >&2
-	exit 1
+# Determine whether to install
+# - Default: install unless creating bundle
+# - --install or --no-install overrides the default
+if [ "$EXPLICIT_INSTALL_FLAG" = true ]; then
+	# Explicit flag was passed
+	if [ "$SKIP_INSTALL" = true ]; then
+		DO_INSTALL=false
+	else
+		DO_INSTALL=true
+	fi
+else
+	# No explicit flag: default behavior
+	if [ "$CREATE_BUNDLE" = true ]; then
+		DO_INSTALL=false
+	else
+		DO_INSTALL=true
+	fi
 fi
 
 # Check manifest exists
 if [ ! -f "$MANIFEST" ]; then
 	echo "[ERROR] Manifest file not found: $MANIFEST" >&2
+	exit 1
+fi
+
+# Check for required IBM files
+if [ ! -d "$IBM_DIR" ] || [ -z "$(ls -A $IBM_DIR)" ]; then
+	echo "[ERROR] $IBM_DIR/ is missing or empty. Please place your licensed IBM i Access files in this directory before building." >&2
 	exit 1
 fi
 
@@ -56,27 +90,42 @@ fi
 # Clean previous build output
 rm -rf "$BUILD_DIR" "$REPO" "$BUNDLE"
 
-# Uninstall previous version to avoid conflicts
-if flatpak info "$APP_ID" >/dev/null 2>&1; then
-	echo "[INFO] Uninstalling previous version..."
-	flatpak remove "$APP_ID" || true
+# Uninstall previous version (only if installing)
+if [ "$DO_INSTALL" = true ]; then
+	if flatpak info "$APP_ID" >/dev/null 2>&1; then
+		echo "[INFO] Uninstalling previous version..."
+		flatpak remove "$APP_ID" || true
+	fi
 fi
 
-# Build and install Flatpak directly
-echo "[INFO] Building and installing Flatpak ($INSTALL_SCOPE)..."
-echo "[INFO] Note: Release version is managed via git tags (currently targeting v1.0.0)"
-flatpak-builder --force-clean $INSTALL_SCOPE --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
-
-echo "[SUCCESS] Flatpak built and installed successfully ($INSTALL_SCOPE)."
-echo "[INFO] Built successfully"
+# Build the Flatpak
+echo "[INFO] Building Flatpak..."
+if [ "$DO_INSTALL" = true ]; then
+	echo "[INFO] Building and installing Flatpak ($INSTALL_SCOPE)..."
+	flatpak-builder --force-clean $INSTALL_SCOPE --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
+	echo "[SUCCESS] Flatpak built and installed ($INSTALL_SCOPE)."
+else
+	echo "[INFO] Building without local install..."
+	flatpak-builder --force-clean --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
+	echo "[SUCCESS] Flatpak built successfully."
+fi
 
 # Optionally create distributable bundle
 if [ "$CREATE_BUNDLE" = true ]; then
-	echo "[INFO] Creating distributable bundle: $BUNDLE"
-	flatpak build-bundle --runtime-repo="$REPO" "$REPO" "$BUNDLE" "$APP_ID"
+	if [ "$STANDALONE" = true ]; then
+		echo "[INFO] Creating standalone self-contained bundle: $BUNDLE"
+		echo "[INFO] This will embed the runtime (~500MB) for full offline use"
+		flatpak build-bundle "$REPO" "$BUNDLE" "$APP_ID"
+	else
+		echo "[INFO] Creating distributable bundle: $BUNDLE"
+		echo "[INFO] Note: Users will need org.freedesktop.Platform//$RUNTIME_VER from Flathub"
+		flatpak build-bundle --runtime-repo="$REPO" "$REPO" "$BUNDLE" "$APP_ID"
+	fi
 	echo "[SUCCESS] Bundle created: $BUNDLE"
 	echo "[INFO] Checksum:"
 	sha256sum "$BUNDLE"
 else
-	echo "[INFO] Flatpak app is installed. To create a distributable bundle, run: ./build-flatpak.sh --bundle"
+	echo "[INFO] Flatpak app is installed. To create a distributable bundle, run:"
+	echo "       ./build-flatpak.sh --bundle        # Requires runtime from Flathub"
+	echo "       ./build-flatpak.sh --standalone   # Self-contained, no runtime needed"
 fi
