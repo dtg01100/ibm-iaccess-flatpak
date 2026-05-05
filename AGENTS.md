@@ -332,7 +332,7 @@ sudo ./build-flatpak.sh --system
 
 **Runtime Versions:**
 
-- Current: `24.08` (org.freedesktop.Platform//24.08)
+- Current: See `VERSION` file (org.freedesktop.Platform//24.08)
 - OpenJDK extension: `org.freedesktop.Sdk.Extension.openjdk//24.08`
 
 **App ID:** `com.ibm.iaccess`

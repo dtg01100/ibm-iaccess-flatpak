@@ -1,0 +1,36 @@
+name: Validate
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell scripts
+        run: |
+          for f in *.sh; do
+            shellcheck "$f" || exit 1
+          done
+
+      - name: Check desktop entry
+        run: |
+          desktop-file-validate ibm-iaccess.desktop || exit 1
+
+      - name: Check VERSION matches manifest
+        run: |
+          source VERSION
+          if ! grep -q "org.freedesktop.Platform//$RUNTIME_VERSION" com.ibm.iaccess.yaml; then
+            echo "ERROR: VERSION file RUNTIME_VERSION=$RUNTIME_VERSION does not match manifest"
+            exit 1
+          fi
+          if ! grep -q "org.freedesktop.Sdk//$RUNTIME_VERSION" com.ibm.iaccess.yaml; then
+            echo "ERROR: VERSION file RUNTIME_VERSION=$RUNTIME_VERSION does not match manifest SDK version"
+            exit 1
+          fi
+          echo "VERSION file matches manifest"

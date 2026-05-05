@@ -16,8 +16,12 @@ REPO="repo"
 MANIFEST="com.ibm.iaccess.yaml"
 BUILD_DIR="build-dir"
 IBM_DIR="IBMiAccess_v1r1"
+# Source runtime version from VERSION file (single source of truth)
+if [ -f "VERSION" ]; then
+	source VERSION
+fi
 OPENJDK_EXT="org.freedesktop.Sdk.Extension.openjdk"
-RUNTIME_VER="24.08"
+RUNTIME_VER="${RUNTIME_VERSION:-24.08}"
 CREATE_BUNDLE=false
 STANDALONE=false
 INSTALL_SCOPE="--user"
@@ -85,6 +89,14 @@ fi
 if [ ! -f "$MANIFEST" ]; then
 	echo "[ERROR] Manifest file not found: $MANIFEST" >&2
 	exit 1
+fi
+
+# Validate VERSION matches manifest
+if [ -f "VERSION" ]; then
+	if ! grep -q "org.freedesktop.Platform//$RUNTIME_VER" "$MANIFEST"; then
+		echo "[ERROR] VERSION file RUNTIME_VERSION=$RUNTIME_VER does not match manifest" >&2
+		exit 1
+	fi
 fi
 
 # Check for required IBM files
