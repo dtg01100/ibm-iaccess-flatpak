@@ -23,6 +23,20 @@ STANDALONE=false
 INSTALL_SCOPE="--user"
 SKIP_INSTALL=false
 
+# Derive collection ID from git remote (GitHub convention: io.github.{user}.{repo})
+get_collection_id() {
+	local git_remote="$1"
+	local user repo
+	user="$(echo "$git_remote" | sed -n 's/.*github\.com[/:]\([^/]*\)\/\([^/]*\)\.git/\1/p')"
+	repo="$(echo "$git_remote" | sed -n 's/.*github\.com[/:]\([^/]*\)\/\([^/]*\)\.git/\2/p')"
+	if [ -z "$user" ] || [ -z "$repo" ]; then
+		echo "io.flatpak.ibmiaccess"
+	else
+		echo "io.github.${user}.${repo}" | tr '-' '_'
+	fi
+}
+COLLECTION_ID="$(get_collection_id "$(git remote get-url origin 2>/dev/null || echo "")")"
+
 # Parse arguments
 EXPLICIT_INSTALL_FLAG=false
 for arg in "$@"; do
@@ -102,11 +116,11 @@ fi
 echo "[INFO] Building Flatpak..."
 if [ "$DO_INSTALL" = true ]; then
 	echo "[INFO] Building and installing Flatpak ($INSTALL_SCOPE)..."
-	flatpak-builder --force-clean $INSTALL_SCOPE --install --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
+	flatpak-builder --force-clean $INSTALL_SCOPE --install --repo="$REPO" --collection-id="$COLLECTION_ID" "$BUILD_DIR" "$MANIFEST"
 	echo "[SUCCESS] Flatpak built and installed ($INSTALL_SCOPE)."
 else
 	echo "[INFO] Building without local install..."
-	flatpak-builder --force-clean --repo="$REPO" "$BUILD_DIR" "$MANIFEST"
+	flatpak-builder --force-clean --repo="$REPO" --collection-id="$COLLECTION_ID" "$BUILD_DIR" "$MANIFEST"
 	echo "[SUCCESS] Flatpak built successfully."
 fi
 

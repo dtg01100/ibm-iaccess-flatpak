@@ -38,3 +38,7 @@ build-dir/
 
 # Exclude logs
 *.log
+
+# CLIO (managed automatically)
+.clio/*
+!.clio/instructions.md
