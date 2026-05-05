@@ -23,12 +23,10 @@ if [ -f "$DEFAULT_SYSTEM_FILE" ]; then
 fi
 
 # No default system set - prompt user to configure one
-zenity --question --text="No default system configured for quick launch.\n\nWould you like to set a default system now?\n\n(You can change this later via 'Set Quick Launch System')" --width=450 2>/dev/null
-
-if [ $? -eq 0 ]; then
+if zenity --question --text="No default system configured for quick launch.\n\nWould you like to set a default system now?\n\n(You can change this later via 'Set Quick Launch System')" --width=450 2>/dev/null; then
     # User wants to set default - launch system selector
     exec /app/select-default-system.sh "$PLUGIN" "$TITLE"
 else
     # User declined - launch System Configurations
-    /app/launch-ibmiaccess.sh /plugin=cfg /GUI
+    exec /app/launch-ibmiaccess.sh /plugin=cfg /GUI
 fi

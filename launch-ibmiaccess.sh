@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Configure shared temporary directory for printer output/uploads
 # ACS writes temp files here before asking xdg-open to handle them.
 # We use a path in XDG_CACHE_HOME so it's accessible by the host.

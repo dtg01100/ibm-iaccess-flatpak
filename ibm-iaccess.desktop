@@ -2,11 +2,11 @@
 [Desktop Entry]
 Name=IBM i Access Client Solutions
 Comment=Access IBM i systems
-Exec=/app/launch-ibmiaccess.sh %F
+Exec=launch-ibmiaccess.sh %F
 Icon=com.ibm.iaccess
 Terminal=false
 Type=Application
-Categories=Network;Utility;
+Categories=Network;
 StartupNotify=true
 StartupWMClass=com-ibm-iaccess-launch-AcsLaunchPad
 Actions=selectsystem;emulator;sessionmgr;sqlscripts;schemas;datatransfer;ifs;printer;navigator;certificates;
