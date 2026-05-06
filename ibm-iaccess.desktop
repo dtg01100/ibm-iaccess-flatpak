@@ -2,7 +2,7 @@
 [Desktop Entry]
 Name=IBM i Access Client Solutions
 Comment=Access IBM i systems
-Exec=launch-ibmiaccess.sh %F
+Exec=/app/launch-ibmiaccess.sh %F
 Icon=com.ibm.iaccess
 Terminal=false
 Type=Application
